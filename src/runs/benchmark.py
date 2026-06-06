@@ -401,8 +401,26 @@ def run_benchmark(
                     if kind == "baseline"
                     else f"Run {idx + 1}/{runs}"
                 )
-                logger.error("%s failed: %s", label, exc, exc_info=True)
-                raise RuntimeError(f"{label} failed: {exc}") from exc
+                # A single baseline instance crashing (e.g. a transient provider
+                # error that survives retries) must not abort the whole benchmark:
+                # the baseline is an aggregate over instances, so we record the
+                # casualty as a blocked instance and carry on with reduced
+                # coverage. Run-level failures stay fatal — a failed learning
+                # rollout is a real problem worth surfacing.
+                if kind == "baseline":
+                    logger.error(
+                        "%s failed: %s — recording as blocked and continuing",
+                        label, exc, exc_info=True,
+                    )
+                    payload = None
+                    refusal = ProviderRefusalError(
+                        kind="instance_error",
+                        message=f"{label} failed: {exc}",
+                        instance_index=idx,
+                    )
+                else:
+                    logger.error("%s failed: %s", label, exc, exc_info=True)
+                    raise RuntimeError(f"{label} failed: {exc}") from exc
 
             if kind == "baseline":
                 record_baseline_outcome(

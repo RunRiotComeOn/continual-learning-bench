@@ -85,7 +85,14 @@ def run_single(
                         )
                 else:
                     task.prepare_run(derived_run_index)
-            system = system_class(**system_params)
+            # Offer run_index to the system (filtered out for systems whose
+            # __init__ doesn't accept it) so systems that persist per-run
+            # artifacts can namespace them and avoid clobbering across parallel
+            # rollouts.
+            system_init_params = filter_init_params(
+                system_class, {**system_params, "run_index": run_index}
+            )
+            system = system_class(**system_init_params)
             system.reset()
             task_brief = task.get_agent_brief()
             trace_task_params = dict(task_params)

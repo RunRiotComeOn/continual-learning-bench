@@ -230,6 +230,7 @@ def stage_c_canonicalize(
                 effect_history=[candidate.effect],
                 last_reinforced_epoch=current_epoch,
                 epochs_since_reinforce=0,
+                contributing_trials=[candidate.source_trial_id],
             )
             existing_list.append(
                 {"canonical_id": cid, "description": candidate.description}
@@ -253,17 +254,49 @@ def stage_c_canonicalize(
             result = {"match_id": "new"}
 
         match_id = result.get("match_id", "new")
+        update_op = result.get("update_op", "add")
 
         if match_id != "new" and match_id in aggregator.canonicals:
             canon = aggregator.canonicals[match_id]
+            contradicts = (
+                update_op == "replace"
+                and candidate.description.strip() != canon.description.strip()
+            )
+            if contradicts:
+                # The candidate corrects/supersedes the matched fact. Overwrite
+                # the content in place and reset its evidence — the old snippets
+                # no longer support the new claim.
+                if canon.status == "active_in_skillmd":
+                    # An outdated version is live in skill.md: carry the old text
+                    # and a pending replace so stage_d swaps that line out, and
+                    # re-open the canonical for triggering.
+                    canon.superseded_text = canon.description
+                    canon.pending_op = "replace"
+                    canon.status = "waiting"
+                canon.description = candidate.description
+                canon.effect_valence = candidate.effect
+                canon.evidence_snippets = (
+                    [candidate.evidence] if candidate.evidence else []
+                )
+                canon.effect_history = [candidate.effect]
+                # The content changed, so corroboration restarts from this
+                # candidate — the prior contributions supported the old text.
+                canon.contributing_trials = [candidate.source_trial_id]
+                # Keep the running view in sync for later candidates this epoch.
+                for entry in existing_list:
+                    if entry["canonical_id"] == match_id:
+                        entry["description"] = candidate.description
+                        break
+            else:
+                canon.effect_history.append(candidate.effect)
+                canon.contributing_trials.append(candidate.source_trial_id)
+                if candidate.evidence:
+                    canon.evidence_snippets.append(candidate.evidence)
+                    if len(canon.evidence_snippets) > 10:
+                        canon.evidence_snippets = canon.evidence_snippets[-10:]
             canon.quantity += 1
-            canon.effect_history.append(candidate.effect)
             canon.last_reinforced_epoch = current_epoch
             canon.epochs_since_reinforce = 0
-            if candidate.evidence:
-                canon.evidence_snippets.append(candidate.evidence)
-                if len(canon.evidence_snippets) > 10:
-                    canon.evidence_snippets = canon.evidence_snippets[-10:]
             reinforced_this_epoch.add(match_id)
         else:
             cid = aggregator.mint_id()
@@ -276,6 +309,7 @@ def stage_c_canonicalize(
                 effect_history=[candidate.effect],
                 last_reinforced_epoch=current_epoch,
                 epochs_since_reinforce=0,
+                contributing_trials=[candidate.source_trial_id],
             )
             existing_list.append(
                 {"canonical_id": cid, "description": candidate.description}
@@ -330,32 +364,43 @@ def stage_d_trigger_and_update(
     canary_edits = []
     fast_promoted_ids = []
 
-    for canon in fast_promote:
+    def _resolve_op(canon: Canonical) -> str:
+        # A pending "replace" (the canonical was corrected mid-life) takes
+        # precedence; otherwise infer add vs refine from the effect history.
+        if canon.pending_op:
+            return canon.pending_op
         positive_count = sum(1 for e in canon.effect_history if e == "positive")
         negative_count = sum(1 for e in canon.effect_history if e == "negative")
-        op = "add" if positive_count >= negative_count else "refine"
-        all_triggered_info.append({
+        return "add" if positive_count >= negative_count else "refine"
+
+    def _build_info(canon: Canonical, op: str, **extra: object) -> dict:
+        info = {
             "canonical_id": canon.canonical_id,
             "description": canon.description,
             "update_op": op,
             "quantity": canon.quantity,
             "evidence_sample": canon.evidence_snippets[:3],
-            "fast_promote": True,
-        })
+            # Soft corroboration signal for the writer: across how many distinct
+            # instances this claim has been observed. Higher = more trustworthy
+            # as a firm fact; low = still tentative.
+            "distinct_instances": canon.distinct_instances,
+            **extra,
+        }
+        if op == "replace" and canon.superseded_text:
+            info["replaces"] = canon.superseded_text
+        return info
+
+    for canon in fast_promote:
+        op = _resolve_op(canon)
+        all_triggered_info.append(_build_info(canon, op, fast_promote=True))
         canon.status = "active_in_skillmd"
+        canon.pending_op = None
+        canon.superseded_text = ""
         fast_promoted_ids.append(canon.canonical_id)
 
     for canon in canary_candidates:
-        positive_count = sum(1 for e in canon.effect_history if e == "positive")
-        negative_count = sum(1 for e in canon.effect_history if e == "negative")
-        op = "add" if positive_count >= negative_count else "refine"
-        all_triggered_info.append({
-            "canonical_id": canon.canonical_id,
-            "description": canon.description,
-            "update_op": op,
-            "quantity": canon.quantity,
-            "evidence_sample": canon.evidence_snippets[:3],
-        })
+        op = _resolve_op(canon)
+        all_triggered_info.append(_build_info(canon, op))
         canon.status = "triggered"
         canary_edits.append(
             CanaryEdit(
@@ -364,6 +409,8 @@ def stage_d_trigger_and_update(
                 content=canon.description,
             )
         )
+        canon.pending_op = None
+        canon.superseded_text = ""
 
     user = (
         f"## Current Skill.md\n{current_skill_md}\n\n"

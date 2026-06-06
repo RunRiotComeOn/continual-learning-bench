@@ -60,6 +60,21 @@ class Canonical:
     )
     last_reinforced_epoch: int = 0
     epochs_since_reinforce: int = 0
+    # When a contradicting/superseding candidate matches this canonical, the
+    # judge returns update_op="replace". We overwrite the description in place
+    # and, if an outdated version is already live in skill.md, carry a pending
+    # "replace" op plus the old text so stage_d can swap the live line out.
+    pending_op: Literal["add", "refine", "replace"] | None = None
+    superseded_text: str = ""
+    # The distinct trials (instances) that reinforced this canonical. Surfaced
+    # to the writer as a soft corroboration signal — how broadly a claim has
+    # been observed — not as a hard gate.
+    contributing_trials: list[str] = field(default_factory=list)
+
+    @property
+    def distinct_instances(self) -> int:
+        """Number of distinct trials (instances) that reinforced this claim."""
+        return len(set(self.contributing_trials))
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -72,6 +87,9 @@ class Canonical:
             "effect_history": self.effect_history,
             "last_reinforced_epoch": self.last_reinforced_epoch,
             "epochs_since_reinforce": self.epochs_since_reinforce,
+            "pending_op": self.pending_op,
+            "superseded_text": self.superseded_text,
+            "contributing_trials": self.contributing_trials,
         }
 
     @classmethod
@@ -86,6 +104,9 @@ class Canonical:
             effect_history=d.get("effect_history", []),
             last_reinforced_epoch=d.get("last_reinforced_epoch", 0),
             epochs_since_reinforce=d.get("epochs_since_reinforce", 0),
+            pending_op=d.get("pending_op"),
+            superseded_text=d.get("superseded_text", ""),
+            contributing_trials=d.get("contributing_trials", []),
         )
 
 

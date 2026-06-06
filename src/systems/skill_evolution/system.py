@@ -82,8 +82,16 @@ class SkillEvolutionSystem(ContinualLearningSystem):
         clear_context_between_instances: bool = True,
         stateless: bool = False,
         output_dir: str = "",
+        run_index: int | None = None,
     ):
         self._name = name
+        # When the benchmark runs multiple independent rollouts in parallel,
+        # each gets its own run_index. Namespace the snapshot directory by it so
+        # the per-run skill.md / aggregator.json snapshots don't clobber each
+        # other. Single runs (run_index None) keep the flat output_dir.
+        if output_dir and run_index is not None:
+            output_dir = os.path.join(output_dir, f"run_{run_index}")
+        self.run_index = run_index
         self.output_dir = output_dir
         self.fast_promote_multiplier = fast_promote_multiplier
         self.decay_threshold = decay_threshold
