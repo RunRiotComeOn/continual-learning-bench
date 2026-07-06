@@ -56,6 +56,35 @@ An epoch-based system that maintains a self-evolving `skill.md` document:
 
 The system uses Amazon Bedrock Converse API directly (`BedrockClient`), not LiteLLM. Prompt templates are markdown files in `src/systems/skill_evolution/prompts/`.
 
+### SkillClaw system (`src/systems/skill_claw/`)
+
+Wraps [SkillClaw](https://github.com/…/SkillClaw) into the benchmark interface:
+
+- **Skill injection** — at each instance boundary, `SkillManager.retrieve()` finds relevant skills from a local library and injects them into the prompt as `<available_skills>` XML.
+- **Session accumulation** — each completed instance becomes a SkillClaw "session" (list of turns + outcome score).
+- **Epoch evolution** — after `epoch_size` sessions, runs the SkillClaw evolve pipeline: `summarize_sessions_parallel` → `aggregate_sessions_by_skill` → `evolve_skill_from_sessions` / `create_skill_from_sessions`.  Skills are updated in-place in the local `SkillManager`.
+
+Task execution uses `BedrockClient`. Evolution uses SkillClaw's `AsyncLLMClient` (any OpenAI-compatible endpoint, configured via `evolve_api_key` / `evolve_base_url` / `evolve_model`).
+
+**Prerequisite:** `pip install -e /path/to/SkillClaw`
+
+### SkillOpt system (`src/systems/skill_opt/`)
+
+Wraps [SkillOpt](https://github.com/…/SkillOpt)'s ReflACT pipeline into the benchmark interface:
+
+- **Skill document** — maintains a plain-Markdown `skill_content` string, prepended to every new instance as context.
+- **Trajectory accumulation** — each instance's turns are stored as SkillOpt `conversation.json` step records.
+- **Epoch optimization** — after `epoch_size` instances, runs the 4-stage pipeline:
+  1. **Reflect** (`run_minibatch_reflect`) — minibatch analyst LLM extracts edit patches from failures/successes
+  2. **Aggregate** (`merge_patches`) — hierarchical merge of patch proposals
+  3. **Select** (`rank_and_select`) — rank edits, clip to `edit_budget`
+  4. **Update** (`apply_patch_with_report`) — apply edits to skill document
+- **Soft gate** — if `use_gate=True`, reverts the update when epoch mean score drops below the previous epoch.
+
+Task execution uses `BedrockClient`. Reflection/update uses SkillOpt's `chat_optimizer` (openai_chat backend, configured via `opt_api_key` / `opt_base_url` / `opt_model`).
+
+**Prerequisite:** `pip install -e /path/to/SkillOpt`
+
 ### Configs and schedules
 
 `configs/<task>/` holds JSON run configs. Schedules are defined in `src/tasks/<name>/schedules/` (e.g. `default.json`, `quick_test.json`) and control `num_instances`, `runs`, `max_workers`, and `mode`. `clbench run-all` requires a `default.json` schedule per task.

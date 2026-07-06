@@ -31,6 +31,7 @@ from ...interface import (
     TaskAgentBrief,
     TaskResult,
     TaskStepResult,
+    format_task_agent_brief,
 )
 from ...registry import register_task
 from ..schedules import TaskScheduleSpec, get_task_schedule
@@ -570,6 +571,15 @@ class DatabaseExploration(ContinualLearningTask):
         if self._stage_change_notice:
             prompt = f"{self._stage_change_notice}\n\n{prompt}"
             self._stage_change_notice = None
+
+        # Prepend the standard agent brief (objective/reward/baseline) on the very
+        # first question, mirroring every other task. db was the only task that
+        # never surfaced its reward_definition to any system (it lived only in the
+        # trace metadata), so no system — including ICL — knew query efficiency is
+        # what is scored.
+        if self._current_question_idx == 0:
+            brief = self.get_agent_brief()
+            prompt = f"{format_task_agent_brief(brief)}\n\n{prompt}"
 
         live_db_path = (
             str(self._temp_db_path) if self._temp_db_path else str(self.db_path)

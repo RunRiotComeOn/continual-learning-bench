@@ -298,8 +298,11 @@ class ICLSystem(ContinualLearningSystem):
 
         Uses FIFO strategy: removes messages from the start of the list
         until the total tokens (including reserve) fit within max_tokens.
+        Always keeps at least the most recent message — never truncate to an
+        empty list, which would send a system-only request (Bedrock rejects
+        "requires at least one non-system message").
         """
-        while self.messages:
+        while len(self.messages) > 1:
             current_tokens = self._count_message_tokens(
                 [*(prefix_messages or []), *self.messages]
             ) + max(0, extra_tokens)

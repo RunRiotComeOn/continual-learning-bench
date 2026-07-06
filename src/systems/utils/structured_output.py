@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import re
 import time
 from typing import Any, Callable, get_args, get_origin
@@ -29,6 +30,16 @@ _RETRYABLE_LOCAL_EXCEPTIONS = (
 _RETRYABLE_BAD_REQUEST_SUBSTRINGS = (
     "could not parse the json body of your request",
     "request contains an invalid argument",
+)
+# Signatures of a stochastic *degenerate response* — the provider returned a
+# 200 with an unparseable body (e.g. OpenRouter/kimi occasionally emits a blob
+# of blank lines instead of JSON, surfacing as litellm.APIError "Unable to get
+# json response - Expecting value: line N ..."). A fresh sample almost always
+# parses, so these are retryable regardless of the exception class they arrive
+# as. Matched against str(exc) (lowercased).
+_RETRYABLE_DEGENERATE_RESPONSE_SUBSTRINGS = (
+    "unable to get json response",
+    "expecting value: line",
 )
 # Policy: every 5xx status is treated as transient, plus the three 4xx codes
 # that the HTTP RFCs and major providers explicitly mark as retryable.
@@ -86,9 +97,14 @@ _GRAMMAR_TOO_LARGE_SUBSTRINGS = (
     "compiled grammar is too large",
     "simplify your tool schemas",
 )
-_MAX_RETRIES = 5
+_MAX_RETRIES = int(os.environ.get("CLBENCH_LLM_MAX_RETRIES", "8"))
 _BACKOFF_BASE = 2.0
 _RATE_LIMIT_BACKOFF_BASE = 15.0
+# Cap a single backoff sleep so uncapped exponential growth (2**attempt) doesn't
+# balloon at high retry counts; with more retries this keeps the total wait
+# budget wide enough to ride out a transient upstream empty-content/throttle
+# window (~minutes) without any one sleep running away.
+_BACKOFF_CAP = 30.0
 # A single bounded retry for content-policy refusals.  Some 400s on reasoning
 # models are stochastic; appending a benign reminder catches a meaningful
 # fraction without changing semantics.  We deliberately do *not* retry more
@@ -120,6 +136,11 @@ def is_retryable_llm_exception(exc: Exception) -> bool:
     if isinstance(exc, litellm.BadRequestError):
         message = str(exc).lower()
         return any(snippet in message for snippet in _RETRYABLE_BAD_REQUEST_SUBSTRINGS)
+    # Degenerate-response signatures can arrive as a bare litellm.APIError (not a
+    # typed subclass), so check the message on any exception before giving up.
+    message = str(exc).lower()
+    if any(s in message for s in _RETRYABLE_DEGENERATE_RESPONSE_SUBSTRINGS):
+        return True
     # Catches transient HTTP errors that don't surface as one of litellm's typed
     # exception classes — most importantly Cloudflare 520-526, which providers
     # like Anthropic/Together can emit as a generic litellm.APIError.
@@ -138,6 +159,11 @@ def _model_supports_response_format(model: str) -> bool:
     """
     model_lower = model.lower()
     if "gemini" in model_lower:
+        return False
+    # MiniMax ignores response_format (json_schema/json_object) and replies with
+    # chatty prose; the prompt-based fallback (schema injected into the message +
+    # "JSON only" instruction) forces valid JSON out of it instead.
+    if "minimax" in model_lower:
         return False
     try:
         supported_params = litellm.get_supported_openai_params(model=model)
@@ -268,6 +294,56 @@ def completion_with_structured_output(
         )
         completion_kwargs = _prompt_based_kwargs(model, messages, response_schema)
 
+    # OpenRouter-specific extra_body knobs (scoped to openrouter/* models so
+    # other providers are untouched).
+    if model.startswith("openrouter/"):
+        extra_body: dict = {}
+        # Disable reasoning tokens when requested. Only ``{"enabled": false}``
+        # actually stops generation on kimi routes (verified).
+        if os.environ.get("OPENROUTER_DISABLE_REASONING", "").lower() in (
+            "1", "true", "yes", "on",
+        ):
+            extra_body["reasoning"] = {"enabled": False}
+        # Pin provider(s). OpenRouter's default routing occasionally lands on a
+        # quantized backend that returns empty/whitespace content (200 OK, no
+        # body) which crashes long runs; pinning verified-clean providers fixes
+        # it. Comma-separated list in OPENROUTER_PROVIDER, tried in order, no
+        # fallback to unlisted providers.
+        provider: dict = {}
+        provider_env = os.environ.get("OPENROUTER_PROVIDER", "").strip()
+        if provider_env:
+            names = [p.strip() for p in provider_env.split(",") if p.strip()]
+            provider["order"] = names
+            provider["allow_fallbacks"] = False
+        # Prefer routing to providers that support the requested params (json_schema
+        # structured output) over hard-pinning one — spreads load across capable
+        # backends with fallback. On by default; disable with OPENROUTER_REQUIRE_PARAMS=0.
+        if os.environ.get("OPENROUTER_REQUIRE_PARAMS", "0").lower() in (
+            "1", "true", "yes", "on",
+        ):
+            provider["require_parameters"] = True
+        if provider:
+            extra_body["provider"] = provider
+        if extra_body:
+            completion_kwargs["extra_body"] = extra_body
+
+    # MiniMax (any route) emits inline <think> that derails structured JSON; its
+    # API takes a provider switch to suppress it. Detect by model name or the
+    # custom OpenAI base URL pointed at MiniMax.
+    if "minimax" in model.lower() or "minimax" in os.environ.get(
+        "OPENAI_API_BASE", ""
+    ).lower():
+        eb = dict(completion_kwargs.get("extra_body") or {})
+        eb["thinking"] = {"type": "disabled"}
+        completion_kwargs["extra_body"] = eb
+
+    # Per-call timeout for ALL providers. litellm's default request_timeout is
+    # 6000s (~100 min), so a hung connection (any endpoint — OpenRouter or a custom
+    # OpenAI-compatible proxy) blocks the worker for ~100 min before the retry loop
+    # gets a chance. Cap it: a real long-context reasoning call finishes well under
+    # this; a hung one raises litellm.Timeout, which IS retryable → resample.
+    completion_kwargs["timeout"] = float(os.environ.get("CLBENCH_LLM_TIMEOUT", "240"))
+
     refusal_retry_used = False
     for attempt in range(_MAX_RETRIES + 1):
         try:
@@ -345,7 +421,7 @@ def completion_with_structured_output(
                 if (is_rate_limit or is_overloaded)
                 else _BACKOFF_BASE
             )
-            wait = base * (2**attempt)
+            wait = min(base * (2**attempt), _BACKOFF_CAP)
             logger.warning(
                 "%s (attempt %d/%d), retrying in %.1fs: %s",
                 "Rate limited" if is_rate_limit else "Transient error",
@@ -379,11 +455,20 @@ def maybe_unwrap_parameter_envelope(json_str: str) -> str:
 
 
 def validate_with_coercion(json_str: str, schema: type[BaseModel]) -> BaseModel:
-    """Parse JSON and coerce stringified nested BaseModel fields before validation."""
+    """Parse JSON and coerce stringified nested BaseModel fields before validation.
+
+    Any failure to shape the model's output into ``schema`` — JSON decode errors,
+    coercion TypeErrors (e.g. the parsed value was an int/list, not a dict),
+    or schema ValidationErrors — is normalised to ``json.JSONDecodeError`` so the
+    caller treats it as a malformed-content parse failure and RETRIES with a fresh
+    sample (see ``is_retryable_llm_exception``) instead of aborting the run.
+    """
     json_str = maybe_unwrap_parameter_envelope(json_str)
     try:
         return schema.model_validate_json(json_str)
     except Exception:
+        pass
+    try:
         data = _parse_with_fallbacks(json_str, schema)
         coerced = coerce_stringified_fields(data, schema)
         try:
@@ -396,6 +481,16 @@ def validate_with_coercion(json_str: str, schema: type[BaseModel]) -> BaseModel:
             if recovered is None:
                 raise
             return schema.model_validate(recovered)
+    except json.JSONDecodeError:
+        raise
+    except Exception as exc:
+        # Coercion/validation hit unusable model output — convert to a retryable
+        # parse error so a fresh sample is drawn rather than aborting the run.
+        raise json.JSONDecodeError(
+            f"could not coerce model output into {schema.__name__}: {exc}",
+            json_str if isinstance(json_str, str) else repr(json_str),
+            0,
+        ) from exc
 
 
 def _parse_with_fallbacks(
@@ -566,6 +661,10 @@ def _sanitize_invalid_escapes(text: str) -> str:
 
 def extract_json(text: str) -> str:
     """Extract JSON from text that may contain markdown fences or surrounding text."""
+    # Strip inline reasoning blocks first (MiniMax et al. emit <think>…</think>
+    # whose braces would derail the first-{/last-} scan below).
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.S)
+    text = re.sub(r"^.*?</think>", "", text, flags=re.S)
     text = text.strip()
 
     # Try to extract from markdown code fences

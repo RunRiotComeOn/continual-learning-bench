@@ -27,3 +27,22 @@ scratchpad/
 *.egg-info/
 tmp/
 .pi
+# ── skill-evolution systems: ship ONLY our tri-track family + its deps ──────────
+# Ignore all experimental skill_evo_* variants, then re-include the 5 packages the
+# tri-track system actually needs (tri_track + merged + planner/planner_tri/
+# planner_audit deps). Run RESULTS are already ignored via results/ above.
+src/systems/skill_evo_*/
+!src/systems/skill_evo_planner/
+!src/systems/skill_evo_planner_audit/
+!src/systems/skill_evo_planner_tri/
+!src/systems/skill_evo_tri_track/
+!src/systems/skill_evo_tri_track_merged/
+# skill_evolution (old monolith): untracked via git rm --cached; keep it out of future commits
+src/systems/skill_evolution/
+
+# experimental probe / watcher scripts (process artifacts, like results — don't ship)
+scripts/probe_*.py
+scripts/watch_*.py
+scripts/cmp_orchestrator.sh
+scripts/planner_patched/
+scripts/replace_patched/

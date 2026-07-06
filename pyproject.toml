@@ -60,6 +60,14 @@ database_exploration = [
     "huggingface-hub>=0.23.0",
 ]
 
+# SkillClaw system — local packages, install manually:
+#   pip install -e /path/to/SkillClaw
+# skill_claw = []  (no PyPI deps; skillclaw and evolve_server must be installed from source)
+
+# SkillOpt system — local package, install manually:
+#   pip install -e /path/to/SkillOpt
+# skill_opt = []  (no PyPI deps; skillopt must be installed from source)
+
 # Install all task dependencies
 all = [
     "huggingface-hub>=0.23.0",

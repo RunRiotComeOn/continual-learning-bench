@@ -151,6 +151,15 @@ def get_class_params(cls: Type) -> dict[str, Any]:
         # Skip 'self'
         if param_name == "self":
             continue
+        # Skip variadic params (*args / **kwargs): they cannot be surfaced as
+        # named CLI flags or default-injected, and doing so would pass a literal
+        # 'kwargs' key into the constructor. Subclasses that forward via
+        # **kwargs (e.g. the skill_evo ladder rungs) rely on this.
+        if param.kind in (
+            inspect.Parameter.VAR_KEYWORD,
+            inspect.Parameter.VAR_POSITIONAL,
+        ):
+            continue
 
         params[param_name] = {
             "type": resolved_hints.get(param_name)
