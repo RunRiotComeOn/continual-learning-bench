@@ -3,10 +3,11 @@
 _SYSTEM_TEMPLATE = """\
 You are a helpful assistant that can interact with a computer.
 
-You will respond with a JSON object containing two fields:
+Your entire response must be one valid JSON object containing exactly two fields:
 - "thought": Your reasoning and analysis. Explain why you want to perform the action.
-- "command": The raw bash command to execute. Only ONE command (or commands connected with && or ||). \
-Do NOT include markdown fences, code block markers, or any explanation in this field.\
+- "command": The raw bash command to execute. Only ONE command (or commands connected with && or ||).
+Do NOT include markdown fences, code block markers, or any explanation in this field.
+Do NOT output a bare command, THOUGHT/CODE blocks, markdown, or prose outside the JSON object.
 """
 
 _INSTANCE_TEMPLATE = """\
@@ -28,7 +29,7 @@ This workflow should be done step-by-step so that you can iterate on your change
 
 ## Important Rules
 
-1. Every response must contain exactly one command
+1. Every response must be a JSON object with exactly one command in the "command" field
 2. Directory or environment variable changes are not persistent. Every action is executed in a new subshell.
    However, you can prefix any action with `MY_ENV_VAR=MY_VALUE cd /path/to/working/dir && ...` or write/load environment variables from files
 

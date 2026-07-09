@@ -470,6 +470,26 @@ def validate_with_coercion(json_str: str, schema: type[BaseModel]) -> BaseModel:
         pass
     try:
         data = _parse_with_fallbacks(json_str, schema)
+        if (
+            isinstance(data, dict)
+            and set(schema.model_fields.keys()) == {"thought", "command"}
+            and "command" in data
+            and "thought" not in data
+        ):
+            data = {
+                **data,
+                "thought": "Recovered missing thought from command-only JSON.",
+            }
+        if (
+            isinstance(data, dict)
+            and set(schema.model_fields.keys()) == {"thought", "command"}
+            and isinstance(data.get("command"), dict)
+        ):
+            command_payload = data["command"]
+            for key in ("command", "cmd", "bash", "shell"):
+                if isinstance(command_payload.get(key), str):
+                    data = {**data, "command": command_payload[key]}
+                    break
         coerced = coerce_stringified_fields(data, schema)
         try:
             return schema.model_validate(coerced)
@@ -513,6 +533,8 @@ def _parse_with_fallbacks(
        ``{`` and returns the first dict mentioning any expected field
        (e.g. for stringified-payload wrappers like ``{"thought": "<JSON>"}``
        where the outer string is malformed).
+    6. Command-schema recovery for providers that ignore JSON instructions and
+       emit only the bash command text.
 
     If every strategy raises, the last error is re-raised so callers see
     the most informative traceback.
@@ -524,6 +546,7 @@ def _parse_with_fallbacks(
         lambda: decode_first_json_object(extracted),
         lambda: decode_first_json_object(_sanitize_invalid_escapes(extracted)),
         lambda: _scan_or_raise(extracted, schema),
+        lambda: _recover_bare_command_response(extracted, schema),
     ]
     last_error: Exception | None = None
     for strategy in strategies:
@@ -545,6 +568,47 @@ def _scan_or_raise(text: str, schema: type[BaseModel]) -> dict[str, Any]:
             "no embedded JSON object matching schema fields found", text, 0
         )
     return obj
+
+
+def _recover_bare_command_response(
+    text: str,
+    schema: type[BaseModel],
+) -> dict[str, str]:
+    """Recover command-only model output for the codebase action schema.
+
+    MiniMax sometimes ignores prompt-injected JSON schema instructions on the
+    codebase task and emits a raw shell command or a lightweight Command: block.
+    Keep this fallback narrowly scoped to the two-field bash action schema so
+    malformed outputs for other tasks still retry instead of being accepted.
+    """
+    fields = set(schema.model_fields.keys())
+    if fields != {"thought", "command"}:
+        raise json.JSONDecodeError("not a command response schema", text, 0)
+
+    candidate = re.sub(r"<think>.*?</think>", "", text, flags=re.S).strip()
+    if not candidate or candidate.startswith(("{", "[")):
+        raise json.JSONDecodeError("no bare command to recover", text, 0)
+
+    fenced = re.search(r"```(?:bash|sh|shell)?\s*(.*?)```", candidate, flags=re.S | re.I)
+    if fenced:
+        candidate = fenced.group(1).strip()
+
+    labelled = re.search(
+        r"(?:^|\n)\s*(?:bash\s+command|command)\s*:\s*(.+)\s*$",
+        candidate,
+        flags=re.S | re.I,
+    )
+    if labelled:
+        candidate = labelled.group(1).strip()
+
+    candidate = candidate.strip("` \n\r\t")
+    if not candidate:
+        raise json.JSONDecodeError("empty recovered command", text, 0)
+
+    return {
+        "thought": "Recovered a bare command from model output.",
+        "command": candidate,
+    }
 
 
 def decode_first_json_object(text: str) -> Any:

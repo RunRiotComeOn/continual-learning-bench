@@ -1059,6 +1059,10 @@ class SalesPredictionTask(ContinualLearningTask):
             "the analysis you just performed. For each entry, estimate the "
             "total items_sold. Any required entry you omit will receive the "
             "worst possible score.\n\n"
+            "This is the final structured prediction step, not a bash command "
+            "step. Do not return a command field, shell command, code block, "
+            "or reasoning wrapper. Return only the structured predictions "
+            "object requested by the response schema.\n\n"
             f"Required entries ({len(required_entries)} total):\n{pairs_text}"
         )
 

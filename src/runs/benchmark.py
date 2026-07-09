@@ -75,13 +75,14 @@ def run_benchmark_runs(
     run_mode: RunMode = RunMode.PERMUTE,
     verbose_runs: bool = False,
     live_trace_paths: Optional[dict[int, Path]] = None,
+    run_index_offset: int = 0,
 ) -> tuple[TaskResults, list[dict[str, Any]]]:
     """Orchestrate one or more independent benchmark runs, optionally in parallel."""
     if run_group_id is None:
         run_group_id = new_timestamp_run_id()
 
     can_parallelize = task_accepts_parallel_execution(task_class, system_class)
-    run_results: list[Optional[RunSuccess]] = [None] * runs
+    run_results: list[Optional[RunSuccess]] = [None] * (run_index_offset + runs)
     effective_workers = min(max_workers, runs) if can_parallelize else 1
 
     print(
@@ -102,8 +103,9 @@ def run_benchmark_runs(
         },
     )
 
+    run_range = range(run_index_offset, run_index_offset + runs)
     if runs == 1 or effective_workers == 1:
-        for i in range(runs):
+        for i in run_range:
             try:
                 with bind_logging_context(run_index=i, phase="run"):
                     logger.info("run.submitted")
@@ -169,11 +171,11 @@ def run_benchmark_runs(
                         None if live_trace_paths is None else live_trace_paths.get(i)
                     ),
                 ): i
-                for i in range(runs)
+                for i in run_range
             }
 
             if verbose_runs:
-                for i in range(runs):
+                for i in run_range:
                     print(f"  Run {i + 1}/{runs} starting")
 
             drain_run_futures(
@@ -187,7 +189,7 @@ def run_benchmark_runs(
     task_results_list: list[TaskResult] = []
     trace_data_list: list[dict[str, Any]] = []
     execution_summaries: list[dict[str, Any]] = []
-    for entry in run_results:
+    for entry in run_results[run_index_offset:]:
         assert entry is not None
         _, result, trace_data, execution_summary = entry
         task_results_list.append(result)
@@ -224,6 +226,7 @@ def run_benchmark(
     baseline_live_path: Optional[Path] = None,
     live_trace_paths: Optional[dict[int, Path]] = None,
     output_path: Optional[Path] = None,
+    run_index_offset: int = 0,
 ) -> tuple[
     Optional[tuple[Optional[int], TaskResult, dict[str, Any], dict[str, Any]]],
     TaskResults,
@@ -291,6 +294,7 @@ def run_benchmark(
             verbose_runs=verbose_runs,
             live_trace_paths=live_trace_paths,
             output_path=output_path,
+            run_index_offset=run_index_offset,
         )
         logger.info("finished", extra={"path": "sequential"})
         return baseline_info, task_results, run_trace_data
@@ -318,7 +322,7 @@ def run_benchmark(
         None
     ] * num_baseline_instances
     blocked_baseline_instances: list[dict[str, Any]] = []
-    run_results: list[Optional[RunSuccess]] = [None] * runs
+    run_results: list[Optional[RunSuccess]] = [None] * (run_index_offset + runs)
 
     baseline_start_time = datetime.now().isoformat()
 
@@ -362,7 +366,7 @@ def run_benchmark(
                     None if live_trace_paths is None else live_trace_paths.get(i)
                 ),
             ): i
-            for i in range(runs)
+            for i in range(run_index_offset, run_index_offset + runs)
         }
         # Submit baseline instances after; they are fully parallel and can fill
         # whatever worker slots remain once the rollouts have started.
@@ -478,7 +482,7 @@ def run_benchmark(
     task_results_list: list[TaskResult] = []
     run_trace_data_list: list[dict[str, Any]] = []
     execution_summaries: list[dict[str, Any]] = []
-    for entry in run_results:
+    for entry in run_results[run_index_offset:]:
         assert entry is not None
         _, result, trace_data, execution_summary = entry
         task_results_list.append(result)

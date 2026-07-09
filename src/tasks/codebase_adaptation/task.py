@@ -591,7 +591,7 @@ class CodebaseAdaptationTask(ContinualLearningTask):
             reward_definition="Reward is the negative per-issue regret, where solving in fewer command steps is better.",
             completion_definition="An instance completes when you submit a final patch or exhaust the step budget for the issue.",
             constraints=[
-                "Each message should contain exactly one bash command.",
+                'Each response must be a JSON object with exactly one bash command in the "command" field.',
                 "The same repository context may repeat, so reusable repo knowledge should transfer across issues.",
             ],
         )

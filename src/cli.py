@@ -2128,6 +2128,7 @@ Examples:
     config_max_workers = config.get("max_workers")
     config_run_mode = config.get("run_mode", config.get("rollout_mode"))
     config_verbose_runs = config.get("verbose_runs")
+    run_index_offset = int(config.get("run_index_offset", 0))
 
     runs = (
         args.runs
@@ -2233,7 +2234,7 @@ Examples:
             run_index: build_live_trace_path(
                 task_name, run_group_id, f"run_{run_index + 1}"
             )
-            for run_index in range(runs)
+            for run_index in range(run_index_offset, run_index_offset + runs)
         }
         write_live_manifest(
             manifest_path,
@@ -2300,6 +2301,7 @@ Examples:
                 baseline_live_path=baseline_live_path,
                 live_trace_paths=run_live_paths or None,
                 output_path=Path(args.output) if args.output else None,
+                run_index_offset=run_index_offset,
             )
             logger.log(RUN_LOG_LEVEL, "finished")
 

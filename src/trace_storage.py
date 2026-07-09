@@ -11,6 +11,7 @@ import gzip
 import json
 import logging
 import re
+import time
 from dataclasses import dataclass, asdict, field
 from datetime import datetime
 from os import PathLike
@@ -197,7 +198,14 @@ def _atomic_write_json(path: Path | str | PathLike[str], payload: Any) -> None:
     else:
         with open(tmp_path, "w") as f:
             json.dump(payload, f, indent=2)
-    tmp_path.replace(path)
+    for _attempt in range(5):
+        try:
+            tmp_path.replace(path)
+            break
+        except PermissionError:
+            if _attempt == 4:
+                raise
+            time.sleep(0.1 * (_attempt + 1))
 
 
 def _read_json(path: Path | str | PathLike[str]) -> Any:

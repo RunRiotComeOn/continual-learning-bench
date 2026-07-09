@@ -1,0 +1,6 @@
+# Data corpora are sha256-verified at load time (see sales_prediction/corpus.py).
+# On Windows, core.autocrlf=true rewrites LF→CRLF on checkout, which changes the
+# file bytes and breaks the hash check. Force these data files to stay LF and
+# skip EOL conversion entirely.
+data/** -text
+*.jsonl text eol=lf
