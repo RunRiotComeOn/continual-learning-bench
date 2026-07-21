@@ -88,7 +88,7 @@ def test_model_context_window_requires_provider_metadata(monkeypatch):
         get_model_context_window("unknown-model")
 
 
-def test_icl_truncates_against_system_prompt_and_schema_overhead(monkeypatch):
+def test_icl_truncates_history_but_keeps_latest_user_message(monkeypatch):
     monkeypatch.setattr(
         icl_module.litellm,
         "token_counter",
@@ -113,8 +113,9 @@ def test_icl_truncates_against_system_prompt_and_schema_overhead(monkeypatch):
         system_prompt="system",
     )
     system.respond(Query(prompt="hello", response_schema=DummyAction))
+    system.respond(Query(prompt="follow-up", response_schema=DummyAction))
 
     response_roles = [message["role"] for message in captured["messages"]]
     assert response_roles
-    assert response_roles == ["system"]
+    assert response_roles == ["system", "user"]
     assert system.has_truncated_flag is True

@@ -47,6 +47,8 @@ def filter_init_params(
     params: dict[str, Any],
 ) -> dict[str, Any]:
     """Return params accepted by ``cls.__init__``."""
+    if cls.__init__ is object.__init__:
+        return {}
     sig = inspect.signature(cls.__init__)
     if any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()):
         return params

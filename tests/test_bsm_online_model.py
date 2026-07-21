@@ -1,19 +1,25 @@
-"""Focused tests for the standalone BSM online spectrum model."""
+"""Focused tests for the optional standalone BSM online spectrum model."""
 
-from experiments.blind_spectrum_monitoring.online_spectrum_model import (
-    BandwidthClassHypothesis,
-    OnlineSpectrumModel,
-    OnlinePeakTracker,
-    TrackStateDecoder,
-    TrackState,
-    evaluate_model_on_scans,
-)
+import pytest
+
 from src.tasks.blind_spectrum_monitoring.dgp import (
     ChannelDef,
     DetectedPeak,
     ScanInstance,
     SpectrumDGP,
 )
+
+online_spectrum_model = pytest.importorskip(
+    "experiments.blind_spectrum_monitoring.online_spectrum_model",
+    reason="the standalone BSM experiment is not included in this checkout",
+)
+
+BandwidthClassHypothesis = online_spectrum_model.BandwidthClassHypothesis
+OnlineSpectrumModel = online_spectrum_model.OnlineSpectrumModel
+OnlinePeakTracker = online_spectrum_model.OnlinePeakTracker
+TrackStateDecoder = online_spectrum_model.TrackStateDecoder
+TrackState = online_spectrum_model.TrackState
+evaluate_model_on_scans = online_spectrum_model.evaluate_model_on_scans
 
 
 def _scan(scan_idx: int, peaks: list[DetectedPeak]) -> ScanInstance:
