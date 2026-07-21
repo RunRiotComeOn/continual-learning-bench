@@ -1,0 +1,1437 @@
+{
+  "schema_version": 1,
+  "max_evidence_level": 3,
+  "audit_scope": "SkillOpt poker final documents; deterministic interface and opponent-policy checks plus observational future traces",
+  "segmentation_note": "Semantically distinct recommendations are separate entries. Repeated runtime protocols remain entries because they consume deployment context; tightly coupled clauses with one falsifier remain one protocol entry.",
+  "relabel_check": {
+    "sample_size": 30,
+    "agreements": 27,
+    "agreement_rate": 0.9,
+    "disagreements_resolved": [
+      "r1-e001: overgeneralized -> insufficient_test because no paired price/range cases establish failure",
+      "r1-e008: overgeneralized -> insufficient_test because the text is scoped to thin value/fold equity, not strong value",
+      "r1-e010: overgeneralized -> insufficient_test because 'can justify' is permissive rather than universal"
+    ],
+    "review_note": "Second-pass self-review, not independent human agreement; all final overgeneralized and unexecutable entries plus six controls were re-read against code and traces."
+  },
+  "documents": [
+    {
+      "document_id": "skillopt_poker_gpt5_run_0",
+      "path": "results/validation/exploitable_poker/skillopt_poker_gpt5/run_0/skill_opt_ckpt/skill_v0004_accept.md",
+      "entries": [
+        {
+          "id": "r0-b001",
+          "text": "This skill document is automatically populated during the benchmark run.",
+          "source_lines": [
+            3,
+            4
+          ],
+          "claim_type": "boilerplate",
+          "source_context": "initial template",
+          "claimed_scope": "document metadata",
+          "expected_effect": "none",
+          "falsifier": "not applicable",
+          "label": "reliable",
+          "evidence_level": 0,
+          "cross_condition_tested": false,
+          "token_count": 10,
+          "reason": "Unchanged template metadata; excluded from reliability denominators.",
+          "evidence_refs": [],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e001",
+          "text": "Use pot odds, implied odds, effective stack depth, and position to decide speculative preflop calls.",
+          "source_lines": [
+            8,
+            8
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "all opponents when considering speculative calls",
+          "expected_effect": "improve speculative-call profitability",
+          "falsifier": "paired future cases show the recommendation lowers reward",
+          "label": "insufficient_test",
+          "evidence_level": 3,
+          "cross_condition_tested": false,
+          "token_count": 15,
+          "reason": "Plausible poker principle, but aggregate future outcomes do not isolate this entry or establish benefit across variants.",
+          "evidence_refs": [
+            "skill_v0001_accept_new_best.md:8",
+            "run_0000.json:post-step1"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r0-e002",
+          "text": "Avoid large value bets when the board improves the opponent calling range; prefer smaller bets to extract from missed hands, thin pairs, or sticky callers.",
+          "source_lines": [
+            10,
+            10
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "all opponents and board textures",
+          "expected_effect": "increase value while reducing overcommitment",
+          "falsifier": "an opponent calls independently of sizing or missed hands cannot pay value bets",
+          "label": "overgeneralized",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 25,
+          "reason": "The sizing rule omits opponent type; the calling-station policy always calls, so smaller sizing is not needed to induce calls, and fully missed hands do not generally pay value bets.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48",
+            "src/tasks/exploitable_poker/README.md:opponent-variants"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r0-e003",
+          "text": "With a weak pair or no meaningful draw, prefer checking or calling to realize equity instead of building the pot.",
+          "source_lines": [
+            12,
+            12
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "all opponents, prices, and postflop states",
+          "expected_effect": "realize marginal equity cheaply",
+          "falsifier": "the correct response changes with price or opponent continuation range",
+          "label": "overgeneralized",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 20,
+          "reason": "Calling with weak equity is price- and opponent-dependent; fit-or-fold continuation is stronger while a LAG flop bet is much wider.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:51-62",
+            "src/tasks/exploitable_poker/opponents.py:65-106"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r0-e004",
+          "text": "When ahead of a passive caller's range, prefer smaller repeated value bets over one large polarizing overbet.",
+          "source_lines": [
+            14,
+            14
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "passive callers",
+          "expected_effect": "increase value extraction",
+          "falsifier": "the passive caller calls all legal sizes, making systematically smaller sizing leave value unrealized",
+          "label": "overgeneralized",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 17,
+          "reason": "Repeated value betting is sound, but the deterministic calling station calls every bet; the preference for smaller sizing is not supported for strong value hands.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r0-e005",
+          "text": "Adjust aggression and sizing to observed opponent tendencies: bluff less and value bet more against callers, and pressure opponents that over-fold.",
+          "source_lines": [
+            16,
+            16
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "opponent-conditioned across all variants",
+          "expected_effect": "exploit stable opponent policies",
+          "falsifier": "deterministic policies do not exhibit the stated calling or folding tendencies",
+          "label": "reliable",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 21,
+          "reason": "This matches the task objective and the calling-station and fit-or-fold policies, with scope explicitly conditioned on observed tendencies.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/README.md:continual-learning-setup",
+            "src/tasks/exploitable_poker/opponents.py:46-62"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e006",
+          "text": "Keep a structured rationale internal and do not append it to the final PokerSchema action output.",
+          "source_lines": [
+            18,
+            18
+          ],
+          "claim_type": "procedure",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "every response",
+          "expected_effect": "improve traceability without schema leakage",
+          "falsifier": "the response schema requires a reasoning field",
+          "label": "unexecutable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 16,
+          "reason": "PokerAction requires the `thinking` field, so keeping all rationale outside the returned structured action conflicts with the interface.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/task.py:36-46"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e007",
+          "text": "Call reset_per_hand() before every prompt and again after finalizing every PokerSchema action.",
+          "source_lines": [
+            22,
+            25
+          ],
+          "claim_type": "procedure",
+          "source_context": "v2, LAG source epoch",
+          "claimed_scope": "every poker prompt",
+          "expected_effect": "prevent stale hand state",
+          "falsifier": "no such callable exists in the system interface",
+          "label": "unexecutable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 12,
+          "reason": "SkillOpt exposes no `reset_per_hand` tool; reset occurs at completed-instance boundaries in system code, not through model actions.",
+          "evidence_refs": [
+            "src/systems/skill_opt/system.py:422-445",
+            "src/interface.py:ContinualLearningSystem"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e008",
+          "text": "Parse the prompt into a canonical state containing position, cards, board, pot, own stack, and last opponent action.",
+          "source_lines": [
+            27,
+            35
+          ],
+          "claim_type": "procedure",
+          "source_context": "v2, LAG source epoch",
+          "claimed_scope": "every decision",
+          "expected_effect": "ground decisions in the current visible state",
+          "falsifier": "the prompt omits these fields or later responses use stale values",
+          "label": "reliable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 18,
+          "reason": "These fields are explicitly present in the task prompt and re-grounding on them is executable.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/task.py:697-715"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e009",
+          "text": "Populate Opponent_stacks and Legal_actions exactly from every prompt.",
+          "source_lines": [
+            34,
+            38
+          ],
+          "claim_type": "procedure",
+          "source_context": "v2, LAG source epoch",
+          "claimed_scope": "every decision",
+          "expected_effect": "support legality validation",
+          "falsifier": "those fields are not visible in the prompt passed to SkillOpt",
+          "label": "unexecutable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 8,
+          "reason": "Opponent stack is absent from the prompt and legal_actions exists only in Query.metadata; SkillOpt sends query.prompt, not metadata, to the model.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/task.py:697-733",
+            "src/systems/skill_opt/system.py:373-389"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e010",
+          "text": "Set Min_raise_total to null if the prompt explicitly provides it.",
+          "source_lines": [
+            36,
+            39
+          ],
+          "claim_type": "procedure",
+          "source_context": "v2, LAG source epoch",
+          "claimed_scope": "prompts with an explicit minimum raise",
+          "expected_effect": "represent an explicitly supplied threshold",
+          "falsifier": "an explicit value should be retained rather than erased",
+          "label": "contradicted",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 10,
+          "reason": "The task explicitly prints `min raise to X`; converting that known value to null reverses the intended data flow.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/task.py:692-713"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e011",
+          "text": "If any newly parsed field differs from the previous state, discard all previous memory about the hand and opponent.",
+          "source_lines": [
+            41,
+            43
+          ],
+          "claim_type": "strategy",
+          "source_context": "v2, LAG source epoch",
+          "claimed_scope": "every state transition",
+          "expected_effect": "prevent stale state contamination",
+          "falsifier": "normal street changes trigger the rule and erase useful cross-hand opponent learning",
+          "label": "contradicted",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 19,
+          "reason": "Board, pot, and stacks normally change every street; discarding opponent memory on any change contradicts the benchmark's cross-hand learning objective.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/README.md:continual-learning-setup",
+            "src/tasks/exploitable_poker/task.py:interaction-model"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r0-e012",
+          "text": "Prefer the prompt's explicit to-call and minimum-raise values over derived values.",
+          "source_lines": [
+            45,
+            47
+          ],
+          "claim_type": "procedure",
+          "source_context": "v2, LAG source epoch",
+          "claimed_scope": "every decision",
+          "expected_effect": "avoid arithmetic and convention errors",
+          "falsifier": "the prompt does not provide those values",
+          "label": "reliable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 11,
+          "reason": "The prompt explicitly supplies call cost and minimum raise-to amount.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/task.py:707-713"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e013",
+          "text": "If thresholds are absent, reconstruct to_call and min_raise_total from bet history using the stated formulas.",
+          "source_lines": [
+            47,
+            50
+          ],
+          "claim_type": "procedure",
+          "source_context": "v2, LAG source epoch",
+          "claimed_scope": "prompts with missing thresholds",
+          "expected_effect": "recover legal thresholds",
+          "falsifier": "the prompt lacks enough contribution and raise-increment history to apply the formulas",
+          "label": "insufficient_test",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 15,
+          "reason": "The normal task prompt always supplies these thresholds; no held-out missing-threshold cases test the fallback formulas.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/task.py:707-713"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e014",
+          "text": "Compute max_raise_to from both players' stacks and contributions.",
+          "source_lines": [
+            50,
+            51
+          ],
+          "claim_type": "procedure",
+          "source_context": "v2, LAG source epoch",
+          "claimed_scope": "every raise decision",
+          "expected_effect": "cap raises at an effective-stack total",
+          "falsifier": "the model cannot observe the opponent stack or both contributions",
+          "label": "unexecutable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 8,
+          "reason": "The required opponent stack and contribution are not in the prompt visible to SkillOpt.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/task.py:697-733",
+            "src/systems/skill_opt/system.py:373-389"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e015",
+          "text": "Record how every numeric value was derived in internal logs.",
+          "source_lines": [
+            51,
+            51
+          ],
+          "claim_type": "procedure",
+          "source_context": "v2, LAG source epoch",
+          "claimed_scope": "every decision",
+          "expected_effect": "provide numeric provenance",
+          "falsifier": "the model has no internal logging interface",
+          "label": "unexecutable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 10,
+          "reason": "No log-writing tool is exposed to the task model; prose cannot guarantee a persistent internal log.",
+          "evidence_refs": [
+            "src/systems/skill_opt/system.py:354-419"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e016",
+          "text": "Before output, verify action membership and the numeric legality of CHECK, CALL, and RAISE against the prompt.",
+          "source_lines": [
+            53,
+            58
+          ],
+          "claim_type": "procedure",
+          "source_context": "v2, LAG source epoch",
+          "claimed_scope": "every decision",
+          "expected_effect": "prevent illegal actions",
+          "falsifier": "the checks use unavailable fields or contradict task conventions",
+          "label": "reliable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 17,
+          "reason": "The core CHECK/CALL/RAISE constraints match the prompt, although the unavailable Legal_actions field should not be required.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/task.py:707-713",
+            "src/tasks/exploitable_poker/task.py:832-850"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e017",
+          "text": "Reparse up to two times when a legality check fails or a numeric field is ambiguous.",
+          "source_lines": [
+            58,
+            58
+          ],
+          "claim_type": "procedure",
+          "source_context": "v2, LAG source epoch",
+          "claimed_scope": "ambiguous decisions",
+          "expected_effect": "recover from parsing errors",
+          "falsifier": "no ambiguous prompt cases or observable parser attempts exist",
+          "label": "insufficient_test",
+          "evidence_level": 3,
+          "cross_condition_tested": false,
+          "token_count": 16,
+          "reason": "The trace does not expose deterministic parse attempts, so the claimed recovery behavior cannot be verified.",
+          "evidence_refs": [
+            "run_0000.json:interactions"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e018",
+          "text": "When required values remain ambiguous or a raise is illegal, fall back to CHECK, then affordable CALL, then FOLD.",
+          "source_lines": [
+            60,
+            63
+          ],
+          "claim_type": "strategy",
+          "source_context": "v2, LAG source epoch",
+          "claimed_scope": "ambiguous or illegal planned actions",
+          "expected_effect": "emit a safe legal action",
+          "falsifier": "the fallback sacrifices reward or chooses an unavailable action",
+          "label": "insufficient_test",
+          "evidence_level": 3,
+          "cross_condition_tested": false,
+          "token_count": 19,
+          "reason": "No identified future cases isolate the ambiguity fallback, and safety is not equivalent to reward reliability.",
+          "evidence_refs": [
+            "run_0000.json:post-step2"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r0-e018b",
+          "text": "After two failed reparses, prefer affordable CALL, otherwise CHECK when legal, otherwise FOLD.",
+          "source_lines": [
+            77,
+            77
+          ],
+          "claim_type": "strategy",
+          "source_context": "v2, LAG source epoch",
+          "claimed_scope": "ambiguous decisions",
+          "expected_effect": "emit a safe legal fallback",
+          "falsifier": "paired ambiguous cases show a lower reward or the assumed action is unavailable",
+          "label": "insufficient_test",
+          "evidence_level": 3,
+          "cross_condition_tested": false,
+          "token_count": 13,
+          "reason": "This restates the unisolated ambiguity fallback with a different textual priority.",
+          "evidence_refs": [
+            "run_0000.json:post-step2"
+          ],
+          "paired_replay_candidate": false,
+          "duplicate_of": "r0-e018"
+        },
+        {
+          "id": "r0-e019",
+          "text": "Record a timestamped VERIFY_OK token or ambiguity resolution in internal logs before responding.",
+          "source_lines": [
+            65,
+            66
+          ],
+          "claim_type": "procedure",
+          "source_context": "v2, LAG source epoch",
+          "claimed_scope": "every decision",
+          "expected_effect": "prove verification occurred",
+          "falsifier": "the model has no clock or logging tool",
+          "label": "unexecutable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 13,
+          "reason": "Neither a clock nor persistent internal logging interface is available to the task model.",
+          "evidence_refs": [
+            "src/systems/skill_opt/system.py:354-419"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e020",
+          "text": "Return exactly one PokerSchema object containing only action and optional amount, with no thinking field.",
+          "source_lines": [
+            68,
+            75
+          ],
+          "claim_type": "procedure",
+          "source_context": "v2, LAG source epoch",
+          "claimed_scope": "every response",
+          "expected_effect": "enforce output format",
+          "falsifier": "the actual schema requires another field",
+          "label": "unexecutable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 15,
+          "reason": "PokerAction requires `thinking`; all supplied action-only examples fail the declared schema.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/task.py:36-46"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e021",
+          "text": "Before deliberation, extract the current factual state; discard hand-state memories that conflict with the prompt and keep later reasoning consistent with that state.",
+          "source_lines": [
+            79,
+            87
+          ],
+          "claim_type": "procedure",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "every decision",
+          "expected_effect": "prevent state hallucination",
+          "falsifier": "the procedure erases cross-hand opponent knowledge or cannot access required fields",
+          "label": "reliable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 23,
+          "reason": "Re-grounding transient hand facts in the explicit prompt is executable and does not itself require deleting the learned opponent policy.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/task.py:697-715"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e021b",
+          "text": "Include opponent stacks in the factual list extracted from the prompt before deliberation.",
+          "source_lines": [
+            79,
+            79
+          ],
+          "claim_type": "procedure",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "every decision",
+          "expected_effect": "ground effective-stack reasoning",
+          "falsifier": "the prompt does not contain opponent stacks",
+          "label": "unexecutable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 13,
+          "reason": "The task prompt shows only the system player's chips; SkillOpt does not expose Query.metadata to the model.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/task.py:697-733",
+            "src/systems/skill_opt/system.py:373-389"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e022",
+          "text": "Final output must contain only FOLD, CALL, CHECK, or RAISE plus amount for a raise, with no additional free-form text.",
+          "source_lines": [
+            89,
+            95
+          ],
+          "claim_type": "procedure",
+          "source_context": "v1 and notes",
+          "claimed_scope": "every response",
+          "expected_effect": "match PokerSchema",
+          "falsifier": "PokerSchema requires a thinking field",
+          "label": "unexecutable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 20,
+          "reason": "This repeated action-only instruction conflicts with the required `thinking` field.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/task.py:36-46"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-b002",
+          "text": "Analyze the task carefully before acting and use available context and prior feedback.",
+          "source_lines": [
+            90,
+            91
+          ],
+          "claim_type": "boilerplate",
+          "source_context": "initial template",
+          "claimed_scope": "all tasks",
+          "expected_effect": "none specified",
+          "falsifier": "not testable",
+          "label": "insufficient_test",
+          "evidence_level": 0,
+          "cross_condition_tested": false,
+          "token_count": 13,
+          "reason": "Generic template advice; excluded from reliability denominators.",
+          "evidence_refs": [],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e023",
+          "text": "Identify a calling station from repeated calls and weak showdowns, maintaining simple cross-hand call-frequency statistics.",
+          "source_lines": [
+            98,
+            100
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "opponent classification across hands",
+          "expected_effect": "select the calling-station exploit only when supported",
+          "falsifier": "the policy does not call consistently or state cannot persist across hands",
+          "label": "reliable",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 15,
+          "reason": "The deterministic calling-station policy always calls facing a bet, and the benchmark explicitly rewards cross-hand opponent learning.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48",
+            "src/tasks/exploitable_poker/README.md:continual-learning-setup"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e024",
+          "text": "Against a calling station, bluff less and extract more value from made hands.",
+          "source_lines": [
+            102,
+            102
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "confirmed calling-station opponents",
+          "expected_effect": "avoid zero-fold-equity bluffs and gain value",
+          "falsifier": "the opponent folds often or does not pay value bets",
+          "label": "reliable",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 13,
+          "reason": "This directly matches the always-call deterministic policy and is correctly scoped.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e025",
+          "text": "Against a calling station, avoid bluff 3-bets and prefer preflop raises with hands that can make strong pairs or better.",
+          "source_lines": [
+            104,
+            106
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "confirmed calling-station opponents preflop",
+          "expected_effect": "shift preflop aggression toward value",
+          "falsifier": "the opponent folds sufficiently often to support bluff raises",
+          "label": "reliable",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 20,
+          "reason": "Avoiding fold-dependent preflop bluffs follows from the opponent's always-call policy; the exact value range remains intentionally qualitative.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e026",
+          "text": "Against a calling station, check back missed flops rather than make large pure bluffs.",
+          "source_lines": [
+            108,
+            109
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "confirmed calling-station opponents after missing the flop",
+          "expected_effect": "avoid bluffs with no fold equity",
+          "falsifier": "the opponent folds to flop bets",
+          "label": "reliable",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 14,
+          "reason": "The calling-station policy never folds facing a legal bet.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e027",
+          "text": "Against a calling station, value bet top pair or better instead of checking to induce bluffs.",
+          "source_lines": [
+            110,
+            110
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "confirmed calling-station opponents with top pair or better",
+          "expected_effect": "capture calls from weaker hands",
+          "falsifier": "the opponent will bluff when checked to or fold to value bets",
+          "label": "reliable",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 16,
+          "reason": "The opponent checks when not facing a bet and calls when facing one, so direct value betting is policy-aligned.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e028",
+          "text": "Against a calling station, bet strong draws as semi-bluffs.",
+          "source_lines": [
+            110,
+            110
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "confirmed calling-station opponents with strong draws",
+          "expected_effect": "gain value from equity plus fold equity",
+          "falsifier": "the opponent supplies no fold equity and betting versus checking has no paired benefit",
+          "label": "insufficient_test",
+          "evidence_level": 2,
+          "cross_condition_tested": false,
+          "token_count": 9,
+          "reason": "The opponent never folds, so this is not a conventional semi-bluff; whether betting for equity value helps needs paired replay.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r0-e029",
+          "text": "Use medium later-street sizes to encourage a calling station to call rather than large polarizing sizes.",
+          "source_lines": [
+            111,
+            111
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "confirmed calling-station opponents",
+          "expected_effect": "increase call frequency",
+          "falsifier": "the opponent calls every legal size",
+          "label": "contradicted",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 16,
+          "reason": "The deterministic policy already calls every bet; reducing size cannot increase its call frequency and can leave value unrealized.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r0-e030",
+          "text": "Avoid river bluffs against a calling station unless later evidence shows that opponent folds frequently.",
+          "source_lines": [
+            112,
+            112
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "currently classified calling-station opponents",
+          "expected_effect": "avoid zero-fold-equity river bets and permit reclassification",
+          "falsifier": "the opponent folds while remaining correctly classified as a calling station",
+          "label": "reliable",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 15,
+          "reason": "The primary no-bluff rule matches the policy; the evidence clause correctly allows updating a stale classification.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48",
+            "src/tasks/exploitable_poker/README.md:schedules"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e030b",
+          "text": "Classify the opponent from observed call frequency before applying calling-station rules.",
+          "source_lines": [
+            114,
+            115
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1 calling-station checklist",
+          "claimed_scope": "opponent classification across hands",
+          "expected_effect": "activate the correct exploit",
+          "falsifier": "calling frequency does not distinguish the deterministic variants",
+          "label": "reliable",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 11,
+          "reason": "This correctly repeats the opponent-conditioned gate rather than applying the exploit universally.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-106"
+          ],
+          "paired_replay_candidate": false,
+          "duplicate_of": "r0-e023"
+        },
+        {
+          "id": "r0-e030c",
+          "text": "Against a calling station, choose preflop raises for intrinsic equity and playability rather than fold-dependent bluffs.",
+          "source_lines": [
+            114,
+            116
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1 calling-station checklist",
+          "claimed_scope": "confirmed calling-station opponents preflop",
+          "expected_effect": "shift aggression toward value",
+          "falsifier": "the opponent folds often enough to reward bluff raises",
+          "label": "reliable",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 16,
+          "reason": "This repeats a correctly scoped consequence of the always-call policy.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48"
+          ],
+          "paired_replay_candidate": false,
+          "duplicate_of": "r0-e025"
+        },
+        {
+          "id": "r0-e030d",
+          "text": "Against a calling station, bet decent made hands on the flop for value.",
+          "source_lines": [
+            114,
+            117
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1 calling-station checklist",
+          "claimed_scope": "confirmed calling-station opponents with a made hand",
+          "expected_effect": "capture calls from weaker hands",
+          "falsifier": "the opponent folds to value bets",
+          "label": "reliable",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 13,
+          "reason": "This repeats the policy-aligned direct value-betting rule.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48"
+          ],
+          "paired_replay_candidate": false,
+          "duplicate_of": "r0-e027"
+        },
+        {
+          "id": "r0-e030e",
+          "text": "Against a calling station, bet strong flop draws as semi-bluffs.",
+          "source_lines": [
+            114,
+            117
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1 calling-station checklist",
+          "claimed_scope": "confirmed calling-station opponents with strong draws",
+          "expected_effect": "gain from equity plus fold equity",
+          "falsifier": "the opponent supplies no fold equity and paired betting has no reward benefit",
+          "label": "insufficient_test",
+          "evidence_level": 2,
+          "cross_condition_tested": false,
+          "token_count": 10,
+          "reason": "This repeats a draw-betting recommendation whose causal benefit is not established.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48"
+          ],
+          "paired_replay_candidate": false,
+          "duplicate_of": "r0-e028"
+        },
+        {
+          "id": "r0-e030f",
+          "text": "Against a calling station, check and proceed cautiously after missing the flop.",
+          "source_lines": [
+            114,
+            117
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1 calling-station checklist",
+          "claimed_scope": "confirmed calling-station opponents after missing the flop",
+          "expected_effect": "avoid zero-fold-equity bluffs",
+          "falsifier": "the opponent folds to flop bets",
+          "label": "reliable",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 12,
+          "reason": "This repeats the correctly scoped no-pure-bluff rule.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48"
+          ],
+          "paired_replay_candidate": false,
+          "duplicate_of": "r0-e026"
+        },
+        {
+          "id": "r0-e031",
+          "text": "On the turn, continue value betting only hands that improved; otherwise use pot control when marginal.",
+          "source_lines": [
+            114,
+            119
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1 calling-station checklist",
+          "claimed_scope": "confirmed calling-station opponents on the turn",
+          "expected_effect": "balance value extraction and pot control",
+          "falsifier": "an already strong unimproved hand should still value bet",
+          "label": "overgeneralized",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 16,
+          "reason": "Requiring improvement is too narrow: a strong flop hand can remain ahead and should continue extracting from an always-calling opponent.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r0-e032",
+          "text": "On the river against a calling station, thin value bet whenever holding at least one pair or reasonable showdown equity.",
+          "source_lines": [
+            114,
+            119
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1 calling-station checklist",
+          "claimed_scope": "all river boards against calling stations",
+          "expected_effect": "capture thin calls",
+          "falsifier": "board texture and the opponent's possible hand range make one pair an underdog when called",
+          "label": "overgeneralized",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 20,
+          "reason": "A bare one-pair threshold ignores board texture and relative hand strength; always being called makes mistaken thin value especially costly.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48",
+            "src/tasks/exploitable_poker/task.py:scoring"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r0-e033",
+          "text": "Maintain opponent statistics across hands and favor exploitation over a fixed bluff-heavy default.",
+          "source_lines": [
+            121,
+            121
+          ],
+          "claim_type": "strategy",
+          "source_context": "v1, calling-station source epoch",
+          "claimed_scope": "all scheduled opponent variants",
+          "expected_effect": "adapt to and retain stable opponent patterns",
+          "falsifier": "the task has no stable cross-hand opponent patterns",
+          "label": "reliable",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 13,
+          "reason": "This is the explicit continual-learning objective and all three variants have deterministic stable policies within stages.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/README.md:continual-learning-setup",
+            "src/tasks/exploitable_poker/opponents.py:253-257"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e034",
+          "text": "Before reading every prompt and after emitting every action, call reset_per_hand(); abort to a fallback if the call is unavailable.",
+          "source_lines": [
+            123,
+            128
+          ],
+          "claim_type": "procedure",
+          "source_context": "v4, fit-or-fold source epoch",
+          "claimed_scope": "every poker prompt",
+          "expected_effect": "enforce per-hand state isolation",
+          "falsifier": "reset_per_hand is unavailable, which would force fallback on every decision",
+          "label": "unexecutable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 20,
+          "reason": "The second protocol repeats a nonexistent API and makes its absence an unconditional fallback trigger.",
+          "evidence_refs": [
+            "src/systems/skill_opt/system.py:422-445",
+            "src/interface.py:ContinualLearningSystem"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e035",
+          "text": "Parse exactly once into state fields including unavailable opponent stacks and legal actions, while later permitting two reparses.",
+          "source_lines": [
+            130,
+            137
+          ],
+          "claim_type": "procedure",
+          "source_context": "v4, fit-or-fold source epoch",
+          "claimed_scope": "every decision",
+          "expected_effect": "deterministically validate the prompt",
+          "falsifier": "required fields are invisible and parse-once contradicts reparse instructions",
+          "label": "unexecutable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 18,
+          "reason": "The protocol both references invisible fields and contains an internal exactly-once versus reparse contradiction.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/task.py:697-733",
+            "src/systems/skill_opt/system.py:373-389"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e036",
+          "text": "If any new state field differs from any stored per-hand state, discard all previous hand and opponent memory.",
+          "source_lines": [
+            139,
+            140
+          ],
+          "claim_type": "strategy",
+          "source_context": "v4, fit-or-fold source epoch",
+          "claimed_scope": "every state transition",
+          "expected_effect": "guarantee freshness",
+          "falsifier": "ordinary state progress erases the opponent model needed across hands",
+          "label": "contradicted",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 18,
+          "reason": "This repeats the rule that conflicts with the task's cross-hand adaptation requirement.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/README.md:continual-learning-setup"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r0-e037",
+          "text": "Recompute missing numeric thresholds, enforce raise bounds using unavailable max-raise inputs, and fall back when ambiguity remains.",
+          "source_lines": [
+            142,
+            145
+          ],
+          "claim_type": "procedure",
+          "source_context": "v4, fit-or-fold source epoch",
+          "claimed_scope": "every raise decision",
+          "expected_effect": "prevent illegal raises",
+          "falsifier": "required opponent stack and contribution fields are unavailable",
+          "label": "unexecutable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 17,
+          "reason": "The legal-action goal is sound, but this repeated implementation requires values the model does not receive.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/task.py:697-733",
+            "src/systems/skill_opt/system.py:373-389"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e038",
+          "text": "Do not emit thinking or extracted-state rationale; return only action and optional amount.",
+          "source_lines": [
+            147,
+            149
+          ],
+          "claim_type": "procedure",
+          "source_context": "v4, fit-or-fold source epoch",
+          "claimed_scope": "every response",
+          "expected_effect": "prevent reasoning leakage",
+          "falsifier": "the declared response schema requires thinking",
+          "label": "unexecutable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 13,
+          "reason": "This is a third action-only instruction that conflicts with PokerAction.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/task.py:36-46"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e039",
+          "text": "Write internal verification tokens and logs before output, then invoke reset_per_hand after output.",
+          "source_lines": [
+            151,
+            153
+          ],
+          "claim_type": "procedure",
+          "source_context": "v4, fit-or-fold source epoch",
+          "claimed_scope": "every response",
+          "expected_effect": "instrument verification and cleanup",
+          "falsifier": "no logging/reset tool exists and no action can occur after the final response",
+          "label": "unexecutable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 13,
+          "reason": "The model has neither logging nor reset tools, and cannot execute a post-response action in the same turn.",
+          "evidence_refs": [
+            "src/systems/skill_opt/system.py:354-445"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r0-e040",
+          "text": "When parsing or legality remains ambiguous, choose CHECK, then affordable CALL, then FOLD.",
+          "source_lines": [
+            155,
+            157
+          ],
+          "claim_type": "strategy",
+          "source_context": "v4, fit-or-fold source epoch",
+          "claimed_scope": "ambiguous decisions",
+          "expected_effect": "choose a safe legal fallback",
+          "falsifier": "paired ambiguous cases show a lower reward or the assumed action is unavailable",
+          "label": "insufficient_test",
+          "evidence_level": 3,
+          "cross_condition_tested": false,
+          "token_count": 13,
+          "reason": "This repeats a fallback whose behavioral reliability is not isolated by existing traces.",
+          "evidence_refs": [
+            "run_0000.json:post-step4"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r0-e041",
+          "text": "Treat the prose protocol as enforcement-level so no execution path can bypass reset, parse, verify, legality check, and emit.",
+          "source_lines": [
+            159,
+            159
+          ],
+          "claim_type": "procedure",
+          "source_context": "v4, fit-or-fold source epoch",
+          "claimed_scope": "all model execution paths",
+          "expected_effect": "provide instrumental guarantees",
+          "falsifier": "natural-language context cannot create tools or hard execution control",
+          "label": "unexecutable",
+          "evidence_level": 1,
+          "cross_condition_tested": false,
+          "token_count": 19,
+          "reason": "A skill prompt cannot turn unavailable operations into instrumentally enforced runtime controls.",
+          "evidence_refs": [
+            "src/systems/skill_opt/system.py:354-419"
+          ],
+          "paired_replay_candidate": false
+        }
+      ]
+    },
+    {
+      "document_id": "skillopt_poker_gpt5_run_1",
+      "path": "results/validation/exploitable_poker/skillopt_poker_gpt5/run_1/skill_opt_ckpt/skill_v0005_accept_new_best.md",
+      "entries": [
+        {
+          "id": "r1-b001",
+          "text": "This skill document is automatically populated during the benchmark run.",
+          "source_lines": [
+            3,
+            4
+          ],
+          "claim_type": "boilerplate",
+          "source_context": "initial template",
+          "claimed_scope": "document metadata",
+          "expected_effect": "none",
+          "falsifier": "not applicable",
+          "label": "reliable",
+          "evidence_level": 0,
+          "cross_condition_tested": false,
+          "token_count": 10,
+          "reason": "Unchanged template metadata; excluded from reliability denominators.",
+          "evidence_refs": [],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r1-e001",
+          "text": "On the button facing a modest blind raise, prefer calling with marginal playable hands because position, price, and implied odds usually dominate folding or light 3-betting.",
+          "source_lines": [
+            8,
+            8
+          ],
+          "claim_type": "strategy",
+          "source_context": "v5, final LAG source epoch",
+          "claimed_scope": "all opponents in this specific preflop node",
+          "expected_effect": "improve marginal-hand realization",
+          "falsifier": "profitability changes with raise size, hand range, stack, and opponent policy",
+          "label": "insufficient_test",
+          "evidence_level": 3,
+          "cross_condition_tested": false,
+          "token_count": 26,
+          "reason": "The rule came from a special LAG-era node, but existing traces do not provide paired price/range cases proving that its qualified 'usually' claim fails elsewhere.",
+          "evidence_refs": [
+            "run_0001.json:step5-LAG-source",
+            "run_0001.json:post-step5"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r1-e002",
+          "text": "Reserve 3-bets for deep stacks, clear fold equity, or a specific read.",
+          "source_lines": [
+            8,
+            8
+          ],
+          "claim_type": "strategy",
+          "source_context": "v5, final LAG source epoch",
+          "claimed_scope": "all opponents and preflop situations",
+          "expected_effect": "avoid low-quality light 3-bets",
+          "falsifier": "shallower stacks or value hands make 3-betting preferable without fold equity",
+          "label": "overgeneralized",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 12,
+          "reason": "The rule omits value 3-bets and incorrectly makes deep stacks a general prerequisite; fold equity also vanishes against the calling station.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48",
+            "src/tasks/exploitable_poker/opponents.py:65-106"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r1-e003",
+          "text": "With limited showdown value or medium equity, favor check-call lines on flop and turn for pot control.",
+          "source_lines": [
+            10,
+            10
+          ],
+          "claim_type": "strategy",
+          "source_context": "v5, final LAG source epoch",
+          "claimed_scope": "all opponents and postflop prices",
+          "expected_effect": "control pot and realize equity",
+          "falsifier": "limited showdown value may require folding or bluffing, and calling depends on price and range",
+          "label": "overgeneralized",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 17,
+          "reason": "This resembles a LAG flop-float exploit but omits opponent, position, price, and street conditions.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:65-106",
+            "run_0001.json:step5-LAG-source"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r1-e004",
+          "text": "Use positional advantage to avoid inflating pots with marginal holdings.",
+          "source_lines": [
+            10,
+            10
+          ],
+          "claim_type": "strategy",
+          "source_context": "v5, final LAG source epoch",
+          "claimed_scope": "marginal holdings in position",
+          "expected_effect": "reduce downside while retaining flexibility",
+          "falsifier": "paired in-position cases show aggression is more profitable",
+          "label": "insufficient_test",
+          "evidence_level": 3,
+          "cross_condition_tested": false,
+          "token_count": 10,
+          "reason": "Plausible but too qualitative for existing aggregate future outcomes to verify.",
+          "evidence_refs": [
+            "run_0001.json:post-step5"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r1-e005",
+          "text": "Whenever an opponent checks on flop, turn, or river, frequently make a roughly half-pot value or protection bet.",
+          "source_lines": [
+            12,
+            12
+          ],
+          "claim_type": "strategy",
+          "source_context": "v5, final LAG source epoch",
+          "claimed_scope": "all opponents and all postflop streets",
+          "expected_effect": "extract value and deny draw equity",
+          "falsifier": "checking is not informative for some policies or the bettor lacks value/protection equity",
+          "label": "overgeneralized",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 18,
+          "reason": "A later-street LAG check is informative, but calling-station and fit-or-fold policies also check routinely when not facing a bet; check alone does not justify betting.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-62",
+            "src/tasks/exploitable_poker/opponents.py:65-106"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r1-e006",
+          "text": "After multi-street passivity, make a modest river value-representative bet to maximize fold equity.",
+          "source_lines": [
+            12,
+            12
+          ],
+          "claim_type": "strategy",
+          "source_context": "v5, final LAG source epoch",
+          "claimed_scope": "all opponents after multiple checks",
+          "expected_effect": "win the pot through fold equity",
+          "falsifier": "the opponent never folds or checks do not cap its range",
+          "label": "overgeneralized",
+          "evidence_level": 2,
+          "cross_condition_tested": true,
+          "token_count": 13,
+          "reason": "This is plausible against the LAG policy after it tightens, but directly lacks fold equity against the calling station and is not generally implied by checks.",
+          "evidence_refs": [
+            "src/tasks/exploitable_poker/opponents.py:46-48",
+            "src/tasks/exploitable_poker/opponents.py:91-106"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r1-e007",
+          "text": "Avoid large overbets with marginal hands.",
+          "source_lines": [
+            14,
+            14
+          ],
+          "claim_type": "strategy",
+          "source_context": "v5, final LAG source epoch",
+          "claimed_scope": "marginal hands against all opponents",
+          "expected_effect": "avoid overcommitting weak equity",
+          "falsifier": "paired cases show marginal overbets are reliably profitable",
+          "label": "insufficient_test",
+          "evidence_level": 3,
+          "cross_condition_tested": false,
+          "token_count": 6,
+          "reason": "Reasonable generic caution, but neither deterministic policy code nor aggregate traces establish a universal reward effect.",
+          "evidence_refs": [
+            "run_0001.json:post-step5"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r1-e008",
+          "text": "Prefer consistent small or medium sizing for thin value and fold equity.",
+          "source_lines": [
+            14,
+            14
+          ],
+          "claim_type": "strategy",
+          "source_context": "v5, final LAG source epoch",
+          "claimed_scope": "thin-value and fold-equity bets",
+          "expected_effect": "gain value or folds without overcommitment",
+          "falsifier": "paired cases show a different size has higher reward",
+          "label": "insufficient_test",
+          "evidence_level": 3,
+          "cross_condition_tested": false,
+          "token_count": 12,
+          "reason": "The text is limited to thin value and fold equity; deterministic policies alone do not establish the best sizing within those objectives.",
+          "evidence_refs": [
+            "run_0001.json:post-step5"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r1-e009",
+          "text": "Be more conservative with thin value on coordinated, monotone, or completed-draw boards.",
+          "source_lines": [
+            16,
+            16
+          ],
+          "claim_type": "strategy",
+          "source_context": "v5, final LAG source epoch",
+          "claimed_scope": "thin-value decisions across opponents",
+          "expected_effect": "avoid value betting into ranges strengthened by dangerous runouts",
+          "falsifier": "paired dangerous-board cases show no increased downside",
+          "label": "insufficient_test",
+          "evidence_level": 3,
+          "cross_condition_tested": false,
+          "token_count": 12,
+          "reason": "Plausible general poker knowledge, but this pilot lacks entry-isolated dangerous-board replay.",
+          "evidence_refs": [
+            "run_0001.json:post-step5"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r1-e010",
+          "text": "Strong blockers can justify firmer preflop or river aggression.",
+          "source_lines": [
+            18,
+            18
+          ],
+          "claim_type": "strategy",
+          "source_context": "v5, final LAG source epoch",
+          "claimed_scope": "situations where blockers materially change the opponent range",
+          "expected_effect": "improve aggression by blocking strong continues",
+          "falsifier": "paired blocker cases show no benefit",
+          "label": "insufficient_test",
+          "evidence_level": 3,
+          "cross_condition_tested": false,
+          "token_count": 9,
+          "reason": "The permissive 'can justify' claim is not universal enough for the calling-station counterexample alone to falsify it; paired blocker cases are required.",
+          "evidence_refs": [
+            "run_0001.json:post-step5"
+          ],
+          "paired_replay_candidate": true
+        },
+        {
+          "id": "r1-e011",
+          "text": "Reliable showdown value can justify pot control instead of risky bluffs.",
+          "source_lines": [
+            18,
+            18
+          ],
+          "claim_type": "strategy",
+          "source_context": "v5, final LAG source epoch",
+          "claimed_scope": "hands with dependable showdown value",
+          "expected_effect": "avoid unnecessary bluff risk",
+          "falsifier": "paired cases show bluffing or value betting dominates pot control",
+          "label": "insufficient_test",
+          "evidence_level": 3,
+          "cross_condition_tested": false,
+          "token_count": 11,
+          "reason": "The condition is sensible but too qualitative to classify without matched replay.",
+          "evidence_refs": [
+            "run_0001.json:post-step5"
+          ],
+          "paired_replay_candidate": false
+        },
+        {
+          "id": "r1-b002",
+          "text": "Analyze the task carefully before acting and use available context and prior feedback.",
+          "source_lines": [
+            19,
+            20
+          ],
+          "claim_type": "boilerplate",
+          "source_context": "initial template",
+          "claimed_scope": "all tasks",
+          "expected_effect": "none specified",
+          "falsifier": "not testable",
+          "label": "insufficient_test",
+          "evidence_level": 0,
+          "cross_condition_tested": false,
+          "token_count": 13,
+          "reason": "Generic template advice; excluded from reliability denominators.",
+          "evidence_refs": [],
+          "paired_replay_candidate": false
+        }
+      ]
+    }
+  ]
+}
