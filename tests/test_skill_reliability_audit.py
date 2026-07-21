@@ -68,6 +68,7 @@ def test_metrics_exclude_boilerplate_and_untested_entries():
     assert metrics["evaluable_entries"] == 3
     assert metrics["unreliable_entries"] == 2
     assert metrics["uer"] == 2 / 3
+    assert metrics["confirmed_unreliable_rate"] == 2 / 4
     assert metrics["ogr"] == 1 / 2
     assert metrics["evaluation_coverage"] == 3 / 4
     assert metrics["token_weighted_uer"] == 50 / 60
@@ -131,6 +132,9 @@ def test_report_renders_counts_percentages_and_causal_caveat():
     assert "run_0" in report
     assert "1/2 (50.0%)" in report
     assert "No entry is labelled `harmful`" in report
+    assert "UER is conditional on evaluability" in report
+    assert "Confirmed / all" in report
+    assert "All documents (micro)" in report
     for label in (
         "reliable",
         "contradicted",
@@ -141,3 +145,21 @@ def test_report_renders_counts_percentages_and_causal_caveat():
         "insufficient_test",
     ):
         assert f"`{label}`" in report
+
+
+def test_report_renders_relabel_check_when_present():
+    data = _audit([_entry("a", "reliable", 10)])
+    data["relabel_check"] = {
+        "sample_size": 10,
+        "agreements": 9,
+        "agreement_rate": 0.9,
+        "disagreements_resolved": ["b: overgeneralized -> insufficient_test"],
+        "review_note": "Second-pass self-review, not independent annotation.",
+    }
+
+    report = render_report(data)
+
+    assert "## Label-review check" in report
+    assert "9/10 (90.0%)" in report
+    assert "not independent annotation" in report
+    assert "overgeneralized -> insufficient_test" in report

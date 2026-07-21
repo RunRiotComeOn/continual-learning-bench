@@ -164,6 +164,7 @@ def compute_document_metrics(document: dict[str, object]) -> dict[str, object]:
         "cross_condition_entries": len(cross_tested),
         "overgeneralized_cross_condition_entries": len(cross_overgeneralized),
         "uer": _ratio(len(unreliable), len(evaluable)),
+        "confirmed_unreliable_rate": _ratio(len(unreliable), len(substantive)),
         "ogr": _ratio(len(cross_overgeneralized), len(cross_tested)),
         "evaluation_coverage": _ratio(len(evaluable), len(substantive)),
         "token_weighted_uer": _ratio(unreliable_tokens, evaluable_tokens),
@@ -199,8 +200,8 @@ def render_report(data: dict[str, object]) -> str:
         "",
         "## Summary",
         "",
-        "| Document | UER | OGR | Coverage | Token-weighted UER |",
-        "|---|---:|---:|---:|---:|",
+        "| Document | UER | Confirmed / all | OGR | Coverage | Token-weighted UER |",
+        "|---|---:|---:|---:|---:|---:|",
     ]
 
     metrics_by_document: list[tuple[dict[str, Any], dict[str, object]]] = []
@@ -208,10 +209,14 @@ def render_report(data: dict[str, object]) -> str:
         metrics = compute_document_metrics(document)
         metrics_by_document.append((document, metrics))
         lines.append(
-            "| {document_id} | {uer} | {ogr} | {coverage} | {token_uer} |".format(
+            "| {document_id} | {uer} | {confirmed} | {ogr} | {coverage} | "
+            "{token_uer} |".format(
                 document_id=document["document_id"],
                 uer=_format_ratio(
                     metrics["unreliable_entries"], metrics["evaluable_entries"]
+                ),
+                confirmed=_format_ratio(
+                    metrics["unreliable_entries"], metrics["total_non_boilerplate"]
                 ),
                 ogr=_format_ratio(
                     metrics["overgeneralized_cross_condition_entries"],
@@ -223,6 +228,75 @@ def render_report(data: dict[str, object]) -> str:
                 token_uer=_format_optional_percent(metrics["token_weighted_uer"]),
             )
         )
+
+    pooled_metrics = compute_document_metrics(
+        {"entries": [entry for document in documents for entry in document["entries"]]}
+    )
+    lines.append(
+        "| **All documents (micro)** | {uer} | {confirmed} | {ogr} | "
+        "{coverage} | {token_uer} |".format(
+            uer=_format_ratio(
+                pooled_metrics["unreliable_entries"],
+                pooled_metrics["evaluable_entries"],
+            ),
+            confirmed=_format_ratio(
+                pooled_metrics["unreliable_entries"],
+                pooled_metrics["total_non_boilerplate"],
+            ),
+            ogr=_format_ratio(
+                pooled_metrics["overgeneralized_cross_condition_entries"],
+                pooled_metrics["cross_condition_entries"],
+            ),
+            coverage=_format_ratio(
+                pooled_metrics["evaluable_entries"],
+                pooled_metrics["total_non_boilerplate"],
+            ),
+            token_uer=_format_optional_percent(pooled_metrics["token_weighted_uer"]),
+        )
+    )
+
+    lines.extend(
+        [
+            "",
+            "UER is conditional on evaluability: `insufficient_test` entries are ",
+            "excluded from its denominator. Coverage must therefore be reported ",
+            "beside UER; a high UER with low coverage means that the tested subset ",
+            "failed, not that the same fraction of the whole document is known to fail.",
+            "`Confirmed / all` is the conservative observed fraction of all substantive ",
+            "entries already assigned an unreliable label; unevaluated entries remain ",
+            "unknown rather than being treated as reliable.",
+        ]
+    )
+
+    relabel_check = data.get("relabel_check")
+    if isinstance(relabel_check, dict):
+        sample_size = relabel_check.get("sample_size")
+        agreements = relabel_check.get("agreements")
+        agreement = (
+            _format_ratio(agreements, sample_size)
+            if _is_int(agreements) and _is_int(sample_size)
+            else "not reported"
+        )
+        lines.extend(
+            [
+                "",
+                "## Label-review check",
+                "",
+                f"Agreement before resolution: {agreement}.",
+                "",
+                str(relabel_check.get("review_note", "No review note supplied.")),
+            ]
+        )
+        disagreements = relabel_check.get("disagreements_resolved")
+        if isinstance(disagreements, list) and disagreements:
+            lines.extend(
+                [
+                    "",
+                    "Resolved disagreements:",
+                    "",
+                    *[f"- {item}" for item in disagreements],
+                ]
+            )
 
     for document, metrics in metrics_by_document:
         lines.extend(
