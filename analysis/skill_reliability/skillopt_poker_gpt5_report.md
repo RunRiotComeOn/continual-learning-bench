@@ -1,7 +1,7 @@
 # Skill Entry Reliability Audit
 
-This level-1--3 pilot uses interface checks, deterministic environment 
-policies, and observational future traces. No entry is labelled `harmful`; 
+This level-1--3 pilot uses interface checks, deterministic environment
+policies, and observational future traces. No entry is labelled `harmful`;
 that label requires level-4 paired counterfactual replay.
 
 ## Label definitions
@@ -22,12 +22,12 @@ that label requires level-4 paired counterfactual replay.
 | skillopt_poker_gpt5_run_1 | 4/4 (100.0%) | 4/11 (36.4%) | 4/4 (100.0%) | 4/11 (36.4%) | 100.0% |
 | **All documents (micro)** | 28/44 (63.6%) | 28/59 (47.5%) | 9/24 (37.5%) | 44/59 (74.6%) | 63.7% |
 
-UER is conditional on evaluability: `insufficient_test` entries are 
-excluded from its denominator. Coverage must therefore be reported 
-beside UER; a high UER with low coverage means that the tested subset 
+UER is conditional on evaluability: `insufficient_test` entries are
+excluded from its denominator. Coverage must therefore be reported
+beside UER; a high UER with low coverage means that the tested subset
 failed, not that the same fraction of the whole document is known to fail.
-`Confirmed / all` is the conservative observed fraction of all substantive 
-entries already assigned an unreliable label; unevaluated entries remain 
+`Confirmed / all` is the conservative observed fraction of all substantive
+entries already assigned an unreliable label; unevaluated entries remain
 unknown rather than being treated as reliable.
 
 ## Label-review check

@@ -338,7 +338,7 @@ def render_report(data: dict[str, object]) -> str:
         else:
             lines.append("None.")
 
-    return "\n".join(lines) + "\n"
+    return "\n".join(line.rstrip() for line in lines) + "\n"
 
 
 def _parse_args() -> argparse.Namespace:

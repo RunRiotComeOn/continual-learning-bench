@@ -135,6 +135,7 @@ def test_report_renders_counts_percentages_and_causal_caveat():
     assert "UER is conditional on evaluability" in report
     assert "Confirmed / all" in report
     assert "All documents (micro)" in report
+    assert all(line == line.rstrip() for line in report.splitlines())
     for label in (
         "reliable",
         "contradicted",

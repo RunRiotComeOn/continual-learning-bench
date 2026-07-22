@@ -135,4 +135,3 @@ which requires paired replay.
   levels, and representative failure cases.
 - A proposed paired-replay sample covering high-impact, overgeneralized, and
   apparently reliable controls.
-
